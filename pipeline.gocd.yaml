@@ -1,0 +1,104 @@
+pipelines:
+  champ5:
+    group: champ5
+    label_template: "${champ5[:8]}"
+    materials:
+      champ5:
+        git: https://github.com/Lionshead-io/champ5.git
+        branch: master
+        destination: src
+    stages: &champ5Stages
+      - flow:
+          clean_workspace: true
+          environment_variables:
+            NODE_ENV: development
+          tasks:
+          - script: |
+              cd src
+              npm install
+              npm run flow
+      - unit-test:
+          clean_workspace: true
+          environment_variables:
+            NODE_ENV: development
+          artifacts:
+          - test:
+              source: test-results.xml
+              destination: test-reports/
+          tasks:
+          - script: |
+              cd src
+              npm install
+              npm run test:mocha
+      - code-coverage:
+          clean_workspace: true
+          environment_variables:
+            NODE_ENV: development
+            COV_LINES: 1
+            COV_FUNCTIONS: 1
+            COV_BRANCHES: 1
+          artifacts:
+          - build:
+              source: src/coverage
+          tabs:
+            code-coverage: coverage/index.html
+          tasks:
+          - script: |
+              cd src
+              npm install
+              npm run test:mocha
+              node_modules/.bin/nyc --reporter html node_modules/.bin/mocha "**/*.spec.js" -x "./tests" --reporter spec --compilers "js:babel-core/register" --require babel-polyfill
+              true
+          - script: |
+              cd src
+              node_modules/.bin/nyc check-coverage --lines $COV_LINES --functions $COV_FUNCTIONS --branches $COV_BRANCHES --reporter spec --compilers "js:babel-core/register" --require babel-polyfill
+      - deploy-dev:
+          clean_workspace: true
+          environment_variables:
+            NODE_ENV: dev
+          tasks:
+          - script: |
+              cd src
+              export NODE_ENV=dev
+              npm install
+              npm run build
+              calculus deploy
+      - deploy-qa:
+          approval:
+            type: manual # Require someone in the UI to manually approve the execution of this stage
+          clean_workspace: true
+          environment_variables:
+            NODE_ENV: qa
+          tasks:
+          - script: |
+              cd src
+              export NODE_ENV=qa
+              npm install
+              npm run build
+              calculus deploy
+      - deploy-preprod:
+          approval:
+            type: manual # Require someone in the UI to manually approve the execution of this stage
+          clean_workspace: true
+          environment_variables:
+            NODE_ENV: preprod
+          tasks:
+          - script: |
+              cd src
+              export NODE_ENV=preprod
+              npm install
+              npm run build
+              calculus deploy
+      - deploy-prod:
+          approval:
+            type: manual # Require someone in the UI to manually approve the execution of this stage
+          clean_workspace: true
+          environment_variables:
+            NODE_ENV: prod
+          tasks:
+          - script: |
+              cd src
+              export NODE_ENV=prod
+              npm install
+              npm run build
+              calculus deploy

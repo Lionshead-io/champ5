@@ -1,0 +1,20 @@
+{
+  "FunctionName": "champ5",
+  "Bucket": "iglesias-lambdas",
+  "Environments": "dev,qa,preprod,prod",
+  "tfvars": {
+    "region": "us-east-1",
+    "bucket": "iglesias-lambdas",
+    "memory_size": 128,
+    "timeout": 300,
+    "role": "arn:aws:iam::348102451022:role/lambda_bae_execution",
+    "dev": {
+      "memory_size": 256,
+      "environment": {
+        "variables": {
+          "API_KEY": "A000"
+        }
+      }
+    }
+  }
+}
